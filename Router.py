@@ -21,6 +21,17 @@ class chatHistory:
 
 chat = chatHistory()
 ## Main Functions
+def router_func(s):
+    chat_history = chat.get_history()
+    #print(chat_history)
+    prompt = f'''Classify the request: {s} as one of the following classes based on the context. DO NOT say anthing else:
+    - "NORMAL CHAT" : for normal chat request 
+    - "OPERATOR" : for request relating to operations like open garage close garage
+    - "YOU TUBE" : for requests relating to you tube'''
+    response = model.generate_content(prompt)
+    print(response.text)
+    return response.text
+
 def chat_func(s):
     chat_history = chat.get_history()
     #print(chat_history)
@@ -56,6 +67,14 @@ def chat_decor():
     s = data.get('s')
     result = chat_func(s)
     return jsonify({'bot':result})
+
+@app.route('/router', methods=['POST'])
+def router_decor():
+    data = request.json
+    s = data.get('s')
+    result = router_func(s)
+    return jsonify({'bot':result})
+
 
 if __name__=='__main__':
     app.run(debug=True)
