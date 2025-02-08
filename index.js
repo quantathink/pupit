@@ -1,26 +1,4 @@
-//const fs = require('fs');
-//const path = require('path');
-//const folderPath = './vids';
-
-                                                                        //GenAI
-//const { GoogleGenerativeAI } = require("@google/generative-ai");
-//const genAI = new GoogleGenerativeAI('AIzaSyCZ6Hp1HC4K13xXncG55w9TyaibrjuiOPc');
-//const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-/*
-const sendQuestion = async function (prompt) {
-
-    //Router Stage
-    result =  await model.generateContent(prompt);
-    response =  await result.response;
-    answer = response.text();
-    return (answer)
-  }
-*/
-//get the function ready
-
-
-
-//const { spawn } = require('child_process');
+const fs = require('fs');
 
 async function googleGemini(s){
     try{
@@ -42,13 +20,37 @@ async function googleGemini(s){
         console.log('Error',error)
     }
 }
+
+async function garbage_clean(s){
+    try{
+        const response = await fetch
+        (
+            'http://127.0.0.1:5000/garbage_clean',
+            {
+                method:'POST',
+                headers:
+                {
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({s:s})
+            }
+        )
+        //return(data.bot)
+    } catch (error){
+        console.log('Error',error)
+    }
+}
+
+
                                                                         //Pupit
 const { Client, LocalAuth,  MessageMedia} = require('whatsapp-web.js');
 const puppeteer = require('puppeteer-core');
 const qrcode = require('qrcode-terminal');
 const { BrowserLauncher } = require('puppeteer');
 
-// Initialize WhatsApp Web Client
+
+
+                                                // Initialize WhatsApp Web Client
 const client = new Client({
     puppeteer: {
         executablePath: '/usr/bin/google-chrome', // Path to installed Google Chrome binary
@@ -67,14 +69,42 @@ client.on('ready',  () => {
     client.sendMessage('971521357338@c.us','I am Alive!!!')
 });
 
+                                                                        //ON Message
 
 client.on('message', async (message) => 
     {
     console.log(`Message received from ${message.from}: ${message.body}`);
+    chatId = message.from
     answer = await googleGemini(message.body)
     //console.log(answer)
-    client.sendMessage('971521357338@c.us',answer)
+    console.log(answer)
 
+    switch (answer) {
+        case '.mp3':
+            const files = fs.readdirSync('./vids');
+            let mpxFile = files.find(file => file.endsWith(answer));
+            console.log(mpxFile)
+            const media = MessageMedia.fromFilePath('./vids/'+ mpxFile);
+            client.sendMessage(chatId, media, { caption: 'Here is you file!'});
+            break;
+        default:
+            client.sendMessage('971521357338@c.us',answer);
+            break;
+
+      }
+/*
+    if (answer == '.mp3'){
+        const files = fs.readdirSync('./vids');
+        let mpxFile = files.find(file => file.endsWith(answer));
+        console.log(mpxFile)
+        const media = MessageMedia.fromFilePath('./vids/'+ mpxFile);
+        client.sendMessage(chatId, media, { caption: 'Here is you file!'})
+
+
+    }else{
+        client.sendMessage('971521357338@c.us',answer)
+    }
+*/
     }
 )
 
