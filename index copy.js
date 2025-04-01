@@ -1,10 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const rtaChat = '971567896226@c.us'
-
 
 // Function One, Open ai chat bot
-async function Router(s){
+async function OpenAI(s){
     try{
         const response = await fetch
         (
@@ -68,7 +66,7 @@ async function simple_answer(s){
 }
 
 // Secretary Mindsimple answer bot
-async function secretary_mind(s, Document,routing_dict){
+async function secretary_mind(s, Document){
     try{
         const response = await fetch
         (
@@ -79,7 +77,7 @@ async function secretary_mind(s, Document,routing_dict){
                 {
                     'Content-Type':'application/json'
                 },
-                body:JSON.stringify({s:s,Document:Document,routing_dict:routing_dict})
+                body:JSON.stringify({s:s,Document:Document})
             }
         )
         const data = await response.json();
@@ -90,7 +88,7 @@ async function secretary_mind(s, Document,routing_dict){
 }
 
 // Secretary Mindsimple answer bot
-async function accountant_mind(s,routing_dict){
+async function accountant_mind(s){
     try{
         const response = await fetch
         (
@@ -101,28 +99,6 @@ async function accountant_mind(s,routing_dict){
                 {
                     'Content-Type':'application/json'
                 },
-                body:JSON.stringify({s:s,routing_dict:routing_dict})
-            }
-        )
-        const data = await response.json();
-        return(data.bot)
-    } catch (error){
-        console.log('Error',error)
-    }
-}
-
-// Jarvis Mind answer bot
-async function jarvis_mind(s,routing_dict){
-    try{
-        const response = await fetch
-        (
-            'http://127.0.0.1:5000/jarvis_mind',
-            {
-                method:'POST',
-                headers:
-                {
-                    'Content-Type':'application/json'
-                },
                 body:JSON.stringify({s:s})
             }
         )
@@ -133,27 +109,6 @@ async function jarvis_mind(s,routing_dict){
     }
 }
 
-// Jarvis Mind answer bot
-async function youtuber_mind(s){
-    try{
-        const response = await fetch
-        (
-            'http://127.0.0.1:5000/youtuber_mind',
-            {
-                method:'POST',
-                headers:
-                {
-                    'Content-Type':'application/json'
-                },
-                body:JSON.stringify({s:s})
-            }
-        )
-        const data = await response.json();
-        return(data.bot)
-    } catch (error){
-        console.log('Error',error)
-    }
-}
                                                                         //Pupit
 const { Client, LocalAuth,  MessageMedia} = require('whatsapp-web.js');
 const puppeteer = require('puppeteer-core');
@@ -179,103 +134,69 @@ client.on('qr', (qr) => {
 client.on('ready',  () => {
     console.log('WhatsApp Web is ready!');
     client.sendMessage('971521357338@c.us','I am Alive!!!')
-    //client.sendMessage('971502398818@c.us','Hey Zheng, I am JARVIS an AI Agent by Mahfoud!!. I can have an normal conversation. save images for you so that I can retrive it later. convert youtube videos "short video" to audio.')
-
 });
 
                                                                         //ON Message
-let routing_dict = {'route':'jarvis','status':''}
+
 client.on('message', async (message) => 
     {
-    //Clean the garbage
     garbage_clean('clean')
-
-    // get and log chat ID and message body
+    //console.log(`Message received from ${message.from}: ${message.body}`);
     chatId = message.from
+    answer = await OpenAI(message.body)
+    let routing_dict = {'route':'jarvis','status':'','answer':answer}
+    console.log(`Routing to:  ${answer}`)
     console.log(`Message from:  ${chatId}`)
     console.log(`Context of message from:  ${message.body}`)
-    // Log the routing dictionary
-    console.log(`Routing Dict: ${JSON.stringify(routing_dict)}`);
-    console.log('*****************************************');
-/*
-    if(routing_dict['route'] == 'jarvis'){
-        answer = await Router(message.body)
-        routing_dict['route'] = answer
-        console.log(`New Routing Dict...: ${routing_dict['route']}`)
-        console.log('*****************************************');
-    }else if(chatId == rtaChat){
-        answer  = 'rta'
-        routing_dict['route'] = answer
-        console.log(`New Routing Dict...: ${answer}`)
-        console.log('*****************************************');
-    }else{
-        answer = routing_dict['route']
-        console.log(`New Routing Dict...: ${routing_dict['route']}`)
-        console.log('*****************************************');
-    }
-*/
-    if(chatId == rtaChat){
-        answer  = 'rta'
-        routing_dict['route'] = answer
-        console.log(`New Routing Dict...: ${answer}`)
-        console.log('*****************************************');
-    }else if(routing_dict['route'] == 'jarvis'){
-        answer = await Router(message.body)
-        routing_dict['route'] = answer
-        console.log(`New Routing Dict...: ${routing_dict['route']}`)
-        console.log('*****************************************');
-    }else{
-        answer = routing_dict['route']
-        console.log(`New Routing Dict...: ${routing_dict['route']}`)
-        console.log('*****************************************');
-    }
-
-
+    
+    
     switch (answer) {
-        case 'youtuber':
-            let ansmed = await youtuber_mind(message.body)
+        case '.mp3':
             const files = fs.readdirSync('./vids');
-            let mpxFile = files.find(file => file.endsWith('.mp3'));
+            let mpxFile = files.find(file => file.endsWith(answer));
             const media = await MessageMedia.fromFilePath('./vids/'+ mpxFile);
             client.sendMessage(chatId, media, { caption: 'Here is you file!'});
-            routing_dict['route'] = 'jarvis'
             break;
         case 'secretary':
             let Document = await message.downloadMedia();
-            let Document_file = await secretary_mind(message.body, Document,routing_dict)
+            let Document_file = await secretary_mind(message.body, Document)
             if (Document_file == 'File is Saved'){
                 client.sendMessage(chatId, Document_file);
             }else{
                 let doc_media = await MessageMedia.fromFilePath('./docs/'+ Document_file);
+
                 client.sendMessage(chatId, doc_media);
                 client.sendMessage(chatId, 'Here is the document Master Bruce');
             }
-            routing_dict['route'] = 'jarvis'
-            break;
         case 'accountant':
-            answer = await accountant_mind(message.body,routing_dict)
-            routing_dict['route'] = answer.route
-            console.log(`answer from accountant: ${JSON.stringify(answer)}`)
-            if (answer.status == 'complete'){
-                client.sendMessage(rtaChat,answer.answer);
-            }else{
-                client.sendMessage(chatId,answer.answer);
-            }
-            routing_dict['route'] = 'jarvis'
-            break;
-        case 'jarvis':
-            answer = await jarvis_mind(message.body)
-            client.sendMessage(chatId,answer);
-            break;
+            let ans = await accountant_mind(message.body)
+            //let message_body = message.body + ' what is needed to be done, Just say "save" or "load"'
+            //answer = await simple_answer(message_body)
+            //console.log(answer)
+            //console.log(typeof(Document))
 
-        case 'rta':
-            client.sendMessage('971521357338@c.us', message.body);
-            routing_dict['route'] = 'jarvis'
+
+            // Define a directory to save images
+            /*
+            const saveDir = './docs';
+            if (!fs.existsSync(saveDir)) {
+                fs.mkdirSync(saveDir, { recursive: true });
+            }
+                    // Generate a filename with timestamp
+            const fileExtension = Document.mimetype.split('/')[1]; // Extract file type (e.g., png, jpg)
+            const filename = `image_${Date.now()}.${fileExtension}`;
+            const filepath = path.join(saveDir, filename);
+            // Save the image
+            fs.writeFileSync(filepath, Document.data, { encoding: 'base64' });
+            console.log(`Image saved: ${filepath}`);
+            client.sendMessage(chatId, 'Image received and saved!');
+            */
             break;
         default:
-            client.sendMessage(chatId,'seems somthing went bad');
+            client.sendMessage(chatId,answer);
             break;     
-    }
+
+      }
     }
 )
 
